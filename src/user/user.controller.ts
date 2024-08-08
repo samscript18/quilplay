@@ -6,11 +6,13 @@ import {
   Param,
   Delete,
   Put,
+  Res,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from '@prisma/client';
+import { Response } from 'express';
 
 @Controller('user')
 export class UserController {
@@ -40,7 +42,8 @@ export class UserController {
   }
 
   @Delete(':id')
-  async remove(@Param('id') id: number): Promise<Partial<User>> {
-    return this.userService.remove(id);
+  async remove(@Res() res: Response, @Param('id') id: number): Promise<void> {
+    const msg = await this.userService.remove(id);
+    res.json({ msg });
   }
 }

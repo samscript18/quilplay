@@ -1,34 +1,51 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Put,
+  Param,
+  Delete,
+  Res,
+} from '@nestjs/common';
 import { TrackService } from './track.service';
 import { CreateTrackDto } from './dto/create-track.dto';
 import { UpdateTrackDto } from './dto/update-track.dto';
+import { Track } from '@prisma/client';
+import { Response } from 'express';
 
 @Controller('track')
 export class TrackController {
   constructor(private readonly trackService: TrackService) {}
 
   @Post()
-  create(@Body() createTrackDto: CreateTrackDto) {
+  async create(
+    @Body() createTrackDto: CreateTrackDto,
+  ): Promise<Partial<Track>> {
     return this.trackService.create(createTrackDto);
   }
 
   @Get()
-  findAll() {
+  async findAll(): Promise<Partial<Track>[]> {
     return this.trackService.findAll();
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.trackService.findOne(+id);
+  async findOne(@Param('id') id: number): Promise<Partial<Track>> {
+    return this.trackService.findOne(id);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateTrackDto: UpdateTrackDto) {
-    return this.trackService.update(+id, updateTrackDto);
+  @Put(':id')
+  async update(
+    @Param('id') id: number,
+    @Body() updateTrackDto: UpdateTrackDto,
+  ): Promise<Partial<Track>> {
+    return this.trackService.update(id, updateTrackDto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.trackService.remove(+id);
+  async remove(@Res() res: Response, @Param('id') id: number): Promise<void> {
+    const msg = await this.trackService.remove(id);
+    res.json({ msg });
   }
 }

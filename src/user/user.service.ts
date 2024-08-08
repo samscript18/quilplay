@@ -37,7 +37,7 @@ export class UserService {
   async findOne(id: number): Promise<Partial<User>> {
     try {
       const user = await this.prisma.user.findUniqueOrThrow({
-        where: { id: id },
+        where: { id },
         select: {
           id: true,
           name: true,
@@ -59,7 +59,7 @@ export class UserService {
   ): Promise<Partial<User>> {
     try {
       const user = await this.prisma.user.update({
-        where: { id: id },
+        where: { id },
         data: updateUserDto,
         select: {
           id: true,
@@ -76,20 +76,12 @@ export class UserService {
     }
   }
 
-  async remove(id: number): Promise<Partial<User>> {
+  async remove(id: number): Promise<string> {
     try {
-      const user = await this.prisma.user.delete({
-        where: { id: id },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          profilePicture: true,
-          createdAt: true,
-          updatedAt: true,
-        },
+      await this.prisma.user.delete({
+        where: { id },
       });
-      return user;
+      return `User with id ${id} has been deleted`;
     } catch (error) {
       throw new NotFoundException(`User with id ${id} is not found`, error);
     }

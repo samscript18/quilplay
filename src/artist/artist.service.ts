@@ -1,26 +1,61 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateArtistDto } from './dto/create-artist.dto';
 import { UpdateArtistDto } from './dto/update-artist.dto';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { Artist } from '@prisma/client';
 
 @Injectable()
 export class ArtistService {
-  create(createArtistDto: CreateArtistDto) {
-    return 'This action adds a new artist';
+  constructor(private prisma: PrismaService) {}
+  async create(createArtistDto: CreateArtistDto): Promise<Partial<Artist>> {
+    return this.prisma.artist.create({
+      data: createArtistDto,
+    });
   }
 
-  findAll() {
-    return `This action returns all artist`;
+  async findAll(): Promise<Partial<Artist>[]> {
+    return this.prisma.artist.findMany({
+      orderBy: { name: 'asc' },
+      include: { albums: true, tracks: true },
+    });
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} artist`;
+  async findOne(id: number): Promise<Partial<Artist>> {
+    try {
+      const artist = await this.prisma.artist.findUniqueOrThrow({
+        where: { id },
+        include: { albums: true, tracks: true },
+      });
+      return artist;
+    } catch (error) {
+      throw new NotFoundException(`Artist with id ${id} is not found`, error);
+    }
   }
 
-  update(id: number, updateArtistDto: UpdateArtistDto) {
-    return `This action updates a #${id} artist`;
+  async update(
+    id: number,
+    updateArtistDto: UpdateArtistDto,
+  ): Promise<Partial<Artist>> {
+    try {
+      const artist = await this.prisma.artist.update({
+        where: { id },
+        data: updateArtistDto,
+        include: { albums: true, tracks: true },
+      });
+      return artist;
+    } catch (error) {
+      throw new NotFoundException(`Artist with id ${id} is not found`, error);
+    }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} artist`;
+  async remove(id: number): Promise<string> {
+    try {
+      await this.prisma.artist.delete({
+        where: { id },
+      });
+      return `Artist with id ${id} has been deleted`;
+    } catch (error) {
+      throw new NotFoundException(`Artist with id ${id} is not found`, error);
+    }
   }
 }

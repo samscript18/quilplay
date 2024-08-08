@@ -1,34 +1,51 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Put,
+  Param,
+  Delete,
+  Res,
+} from '@nestjs/common';
 import { ArtistService } from './artist.service';
 import { CreateArtistDto } from './dto/create-artist.dto';
 import { UpdateArtistDto } from './dto/update-artist.dto';
+import { Artist } from '@prisma/client';
+import { Response } from 'express';
 
 @Controller('artist')
 export class ArtistController {
   constructor(private readonly artistService: ArtistService) {}
 
   @Post()
-  create(@Body() createArtistDto: CreateArtistDto) {
+  async create(
+    @Body() createArtistDto: CreateArtistDto,
+  ): Promise<Partial<Artist>> {
     return this.artistService.create(createArtistDto);
   }
 
   @Get()
-  findAll() {
+  async findAll(): Promise<Partial<Artist>[]> {
     return this.artistService.findAll();
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.artistService.findOne(+id);
+  async findOne(@Param('id') id: number): Promise<Partial<Artist>> {
+    return this.artistService.findOne(id);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateArtistDto: UpdateArtistDto) {
-    return this.artistService.update(+id, updateArtistDto);
+  @Put(':id')
+  async update(
+    @Param('id') id: number,
+    @Body() updateArtistDto: UpdateArtistDto,
+  ): Promise<Partial<Artist>> {
+    return this.artistService.update(id, updateArtistDto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.artistService.remove(+id);
+  async remove(@Res() res: Response, @Param('id') id: number): Promise<void> {
+    const msg = await this.artistService.remove(id);
+    res.json({ msg });
   }
 }

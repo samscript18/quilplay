@@ -1,26 +1,59 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateAlbumDto } from './dto/create-album.dto';
 import { UpdateAlbumDto } from './dto/update-album.dto';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { Album } from '@prisma/client';
 
 @Injectable()
 export class AlbumService {
-  create(createAlbumDto: CreateAlbumDto) {
-    return 'This action adds a new album';
+  constructor(private prisma: PrismaService) {}
+  async create(createAlbumDto: CreateAlbumDto): Promise<Partial<Album>> {
+    return this.prisma.album.create({ data: createAlbumDto });
   }
 
-  findAll() {
-    return `This action returns all album`;
+  async findAll(): Promise<Partial<Album>[]> {
+    return this.prisma.album.findMany({
+      orderBy: { title: 'asc' },
+      include: { artist: true, tracks: true },
+    });
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} album`;
+  async findOne(id: number): Promise<Partial<Album>> {
+    try {
+      const album = await this.prisma.album.findUniqueOrThrow({
+        where: { id },
+        include: { artist: true, tracks: true },
+      });
+      return album;
+    } catch (error) {
+      throw new NotFoundException(`Album with id ${id} is not found`, error);
+    }
   }
 
-  update(id: number, updateAlbumDto: UpdateAlbumDto) {
-    return `This action updates a #${id} album`;
+  async update(
+    id: number,
+    updateAlbumDto: UpdateAlbumDto,
+  ): Promise<Partial<Album>> {
+    try {
+      const album = await this.prisma.album.update({
+        where: { id },
+        data: updateAlbumDto,
+        include: { artist: true, tracks: true },
+      });
+      return album;
+    } catch (error) {
+      throw new NotFoundException(`Album with id ${id} is not found`, error);
+    }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} album`;
+  async remove(id: number): Promise<string> {
+    try {
+      await this.prisma.album.delete({
+        where: { id },
+      });
+      return `Album with id ${id} has been deleted`;
+    } catch (error) {
+      throw new NotFoundException(`Album with id ${id} is not found`, error);
+    }
   }
 }
