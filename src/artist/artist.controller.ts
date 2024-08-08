@@ -13,11 +13,13 @@ import { CreateArtistDto } from './dto/create-artist.dto';
 import { UpdateArtistDto } from './dto/update-artist.dto';
 import { Artist } from '@prisma/client';
 import { Response } from 'express';
+import { Public } from 'src/auth/guard/auth.decorator';
 
 @Controller('artist')
 export class ArtistController {
   constructor(private readonly artistService: ArtistService) {}
 
+  @Public()
   @Post()
   async create(
     @Body() createArtistDto: CreateArtistDto,

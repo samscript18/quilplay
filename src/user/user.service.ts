@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -8,7 +12,13 @@ import { User } from '@prisma/client';
 export class UserService {
   constructor(private prisma: PrismaService) {}
   async create(createUserDto: CreateUserDto): Promise<Partial<User>> {
-    return this.prisma.user.create({
+    const userExists = await this.prisma.user.findUnique({
+      where: { email: createUserDto.email },
+    });
+    if (userExists) {
+      throw new BadRequestException(`User with this email already exists`);
+    }
+    const user = await this.prisma.user.create({
       data: createUserDto,
       select: {
         id: true,
@@ -19,6 +29,7 @@ export class UserService {
         updatedAt: true,
       },
     });
+    return user;
   }
 
   async findAll(): Promise<Partial<User>[]> {
@@ -50,6 +61,17 @@ export class UserService {
       return user;
     } catch (error) {
       throw new NotFoundException(`User with id ${id} is not found`, error);
+    }
+  }
+
+  async findUserByEmail(email: string): Promise<User> {
+    try {
+      const user = await this.prisma.user.findUniqueOrThrow({
+        where: { email },
+      });
+      return user;
+    } catch (error) {
+      throw new NotFoundException(`User with email does not exists`, error);
     }
   }
 
