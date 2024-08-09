@@ -5,12 +5,12 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { jwtConstants } from '../constants/auth.constants';
 import { Request } from 'express';
 import { IS_PUBLIC_KEY } from './auth.decorator';
 import { Reflector } from '@nestjs/core';
 import { User } from '@prisma/client';
 import { UserService } from 'src/user/user.service';
+import { ConfigService } from '@nestjs/config';
 
 declare module 'express-serve-static-core' {
   interface Request {
@@ -24,6 +24,7 @@ export class AuthGuard implements CanActivate {
     private jwtService: JwtService,
     private reflector: Reflector,
     private userService: UserService,
+    private configService: ConfigService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -38,7 +39,7 @@ export class AuthGuard implements CanActivate {
     const req: Request = context.switchToHttp().getRequest();
     const authHeader = req.headers.authorization;
 
-    if (!authHeader || !authHeader.startsWith('Bearer')) {
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
       throw new UnauthorizedException('Unauthorized');
     }
 
@@ -49,13 +50,15 @@ export class AuthGuard implements CanActivate {
 
     try {
       const payload = await this.jwtService.verifyAsync(token, {
-        secret: jwtConstants.secret,
+        secret: this.configService.get<string>('jwtSecret'),
       });
       const user = await this.userService.findOne(payload?.userId);
+
       if (!user) {
-        throw new UnauthorizedException('Unauthorized');
+        throw new UnauthorizedException('Unauthorized user');
       }
       req.user = user;
+      req.user.role = user.role;
     } catch {
       throw new UnauthorizedException('Invalid Token');
     }

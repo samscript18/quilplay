@@ -13,8 +13,10 @@ import { User } from '@prisma/client';
 import { LoginDto } from 'src/user/dto/login-user.dto';
 import { Response } from 'express';
 import { Public } from './guard/auth.decorator';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
 @Controller('auth')
+@ApiTags('Auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
@@ -25,6 +27,7 @@ export class AuthController {
 
   @Public()
   @Post('signup')
+  @ApiOperation({ summary: 'register user' })
   async signUp(@Body() createUserDto: CreateUserDto): Promise<Partial<User>> {
     createUserDto.password = await this.hashPassword(createUserDto.password);
     return this.authService.signUp(createUserDto);
@@ -33,6 +36,7 @@ export class AuthController {
   @Public()
   @HttpCode(HttpStatus.OK)
   @Post('login')
+  @ApiOperation({ summary: 'user login' })
   async login(@Res() res: Response, @Body() loginDto: LoginDto) {
     const accessToken = await this.authService.login(loginDto);
     res.json({ accessToken });
